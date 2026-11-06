@@ -23,32 +23,57 @@ The model finds almost every tumour but also marks several false spots per scan,
 stomach. **Review every prediction.** Dice also rises with tumour size: small tumours (< 5 mL) are
 segmented much less accurately.
 
-## Requirements
+## Quick start
 
-- Linux with an NVIDIA GPU, at least 16 GB of memory (tested on an A100 80 GB)
-- Access to [facebook/sam3](https://huggingface.co/facebook/sam3) on Hugging Face (request it on the model page)
-- Read access to this repository, to download the weights (it is private)
+You need an **NVIDIA GPU with at least 16 GB of memory**, and access to
+[facebook/sam3](https://huggingface.co/facebook/sam3): open that page while logged in to Hugging Face,
+request access, and wait for approval. Then create a **Read** token under
+Hugging Face → Settings → Access Tokens.
 
-## Install
+Open a terminal (on Windows, see below) and paste these three commands:
+
+**1. Install** (about 10 minutes; downloads PyTorch, MedSAM3's code and the dependencies)
 
 ```bash
-git clone https://github.com/JacobLiu124/PDAC-MedSAM3.git
-cd PDAC-MedSAM3
-bash install.sh                 # creates .venv and clones MedSAM3 at the version used for training
-.venv/bin/hf auth login         # paste a Hugging Face token that has access to facebook/sam3
+git clone https://github.com/JacobLiu124/PDAC-MedSAM3.git && cd PDAC-MedSAM3 && bash install.sh
 ```
 
-## Run
+**2. Log in to Hugging Face** (once; paste your Read token when asked, and answer `n` to the git question)
 
 ```bash
-export GITHUB_TOKEN=...         # a GitHub token with read access to this repo (or: gh auth login)
+.venv/bin/hf auth login
+```
+
+**3. Run** on one scan, or on a folder of scans
+
+```bash
 .venv/bin/python predict.py --input scan.nii.gz --out predictions/
-.venv/bin/python predict.py --input folder_of_scans/ --out predictions/
 ```
 
-The first run downloads the weights (74 MB) from this repository's release `v0.1` into
-`~/.cache/medsam3_pdac/` and checks their checksum. Already have the file? Pass it directly:
-`--weights medsam3_pdac_lora_epoch5.pt`.
+The first run also downloads the fine-tuned weights (74 MB) from this repository's release `v0.1`,
+checks them, and keeps them in `~/.cache/medsam3_pdac/`. Because the repository is private, this uses the
+GitHub sign-in from step 1. If the download asks for access, set a GitHub token first
+(`export GITHUB_TOKEN=...`), or download `medsam3_pdac_lora_epoch5.pt` from the release page yourself
+and add `--weights medsam3_pdac_lora_epoch5.pt`.
+
+### On Windows
+
+Use WSL, Windows' built-in Linux, which can use your NVIDIA GPU. Once, in PowerShell as administrator:
+
+```powershell
+wsl --install -d Ubuntu-24.04
+```
+
+Restart, open **Ubuntu** from the Start menu, and run the three commands above there.
+Your Windows files are under `/mnt/c/`, for example
+`--input /mnt/c/Users/<you>/Desktop/scan.nii.gz`. A current NVIDIA driver installed in Windows is all
+the GPU needs; do not install a separate driver inside Ubuntu.
+
+### Tested on
+
+Linux (Ubuntu, CUDA 12.8) with an NVIDIA A100: a fresh install reproduced the study's predictions
+voxel for voxel. Windows via WSL and smaller GPUs are expected to work but have not been tested.
+On a GPU with less memory, add `--batch 2`.
 
 **Input:** CT scans in Hounsfield units as `.nii` or `.nii.gz`, one file per scan. Any orientation and
 slice thickness; contrast-enhanced, portal-venous phase works best (that is what the model was trained on).
