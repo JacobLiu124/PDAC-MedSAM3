@@ -1,0 +1,9 @@
+.venv/
+MedSAM3/
+__pycache__/
+*.pt
+*.pth
+*.nii
+*.nii.gz
+predictions/
+.ms3_requirements.txt

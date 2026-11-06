@@ -1,0 +1,96 @@
+# MedSAM3-PDAC
+
+Fully automatic segmentation of **pancreatic ductal adenocarcinoma (PDAC)** on CT with Meta's **SAM3**,
+using LoRA weights fine-tuned from **[MedSAM3](https://github.com/Joey-S-Liu/MedSAM3)**.
+You give it a CT scan; it returns a 3D tumour mask. No clicks or boxes are needed: every axial slice is
+prompted with the text `pancreatic tumor`.
+
+This repository contains only the fine-tuned LoRA layers (74 MB) and the code to run them. SAM3's
+base weights come from Meta via Hugging Face, and MedSAM3's code is downloaded from its own repository.
+
+## Results
+
+Trained on 77 MSD Task07 patients with confirmed PDAC (Memorial Sloan Kettering). Tested on 20 held-out
+MSD patients and, zero-shot, on 83 CPTAC-PDA patients from other hospitals in the US and Poland.
+Mean per-patient 3D Dice, with 95% bootstrap intervals; cut-off 0.5, no post-processing.
+
+| Model | Same hospital (MSD, n = 20) | New hospitals (CPTAC, n = 83) | Tumours found (CPTAC) | False spots per scan (CPTAC) |
+|---|---|---|---|---|
+| MedSAM3-PDAC (this repo), text only | 0.433 [0.323-0.546] | 0.368 [0.325-0.410] | 81/83 | 6.06 |
+| nnU-Net 3d_fullres, same training data | 0.548 [0.438-0.650] | 0.391 [0.333-0.447] | 72/83 | 0.25 |
+
+The model finds almost every tumour but also marks several false spots per scan, mostly in bowel and
+stomach. **Review every prediction.** Dice also rises with tumour size: small tumours (< 5 mL) are
+segmented much less accurately.
+
+## Requirements
+
+- Linux with an NVIDIA GPU, at least 16 GB of memory (tested on an A100 80 GB)
+- Access to [facebook/sam3](https://huggingface.co/facebook/sam3) on Hugging Face (request it on the model page)
+- Read access to this repository, to download the weights (it is private)
+
+## Install
+
+```bash
+git clone https://github.com/JacobLiu124/MedSAM3-PDAC.git
+cd MedSAM3-PDAC
+bash install.sh                 # creates .venv and clones MedSAM3 at the version used for training
+.venv/bin/hf auth login         # paste a Hugging Face token that has access to facebook/sam3
+```
+
+## Run
+
+```bash
+export GITHUB_TOKEN=...         # a GitHub token with read access to this repo (or: gh auth login)
+.venv/bin/python predict.py --input scan.nii.gz --out predictions/
+.venv/bin/python predict.py --input folder_of_scans/ --out predictions/
+```
+
+The first run downloads the weights (74 MB) from this repository's release `v1.0` into
+`~/.cache/medsam3_pdac/` and checks their checksum. Already have the file? Pass it directly:
+`--weights medsam3_pdac_lora_epoch5.pt`.
+
+**Input:** CT scans in Hounsfield units as `.nii` or `.nii.gz`, one file per scan. Any orientation and
+slice thickness; contrast-enhanced, portal-venous phase works best (that is what the model was trained on).
+
+**Output:** `predictions/<name>_tumour.nii.gz` per scan (1 = tumour, 0 = background), on the same grid as
+the input, plus `slice_scores.json` with the highest confidence on every slice.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--cutoff` | 0.5 | Confidence cut-off. Lower finds more but adds false spots; 0.5 was best on both test sets. |
+| `--weights` | `auto` | `auto` (download), a local `.pt`, `medsam3` (MedSAM3-v1 as released) or `none` (plain SAM3) |
+| `--batch` | 8 | Slices per GPU batch. Lower it if you run out of GPU memory. |
+| `--prompt` | `pancreatic tumor` | Text prompt. The model was trained on this phrase. |
+
+## How the model was trained
+
+- **Start:** MedSAM3-v1 LoRA weights on the frozen SAM3 base model; only the LoRA layers (rank 16,
+  alpha 32, on all attention and MLP layers) were trained.
+- **Data:** every slice showing the pancreas plus 10% of other slices from 77 patients (2,762 slices),
+  abdominal window (level 40, width 400 HU), standard radiology orientation, grayscale in three channels.
+  Two concepts: `pancreas` and `pancreatic tumor`.
+- **Negative queries:** each slice was also asked for the concept it does not contain, with an empty
+  answer, so the model learns to say "no tumour here".
+- **Optimisation:** AdamW, learning rate 5e-5 (constant), weight decay 0.01, batch size 4, 5 epochs.
+  The final (epoch 5) weights are released.
+
+Prediction uses exactly the same slice preprocessing (`medsam3_pdac/ct_slices.py`).
+
+## Limitations
+
+- Research use only. Not a medical device and not validated for clinical use.
+- Trained on a single hospital's scans (MSKCC) and 77 patients.
+- Slices are segmented independently, without 3D context, which causes most of the false spots.
+- Keeping only the largest connected region does **not** reliably fix the false spots: in our tests it
+  sometimes kept a false spot and deleted the real tumour.
+
+## Licences and credits
+
+- **SAM3** (Meta): weights and code under Meta's SAM licence; download them yourself from Hugging Face.
+- **MedSAM3** (Liu et al., 2025, [arXiv:2511.19046](https://arxiv.org/abs/2511.19046)): its code is not
+  copied here; `install.sh` clones it. These weights were initialised from MedSAM3-v1. At the time of
+  writing the MedSAM3 repository did not state a licence.
+- **Training data:** Medical Segmentation Decathlon Task07 (Antonelli et al., 2022), with PDAC diagnoses
+  from PANORAMA. **Test data:** CPTAC-PDA via the NCI Imaging Data Commons.
+- No licence has been chosen for this repository's own code yet, so all rights are reserved.
