@@ -32,8 +32,8 @@ segmented much less accurately.
 ## Install
 
 ```bash
-git clone https://github.com/JacobLiu124/MedSAM3-PDAC.git
-cd MedSAM3-PDAC
+git clone https://github.com/JacobLiu124/PDAC-MedSAM3.git
+cd PDAC-MedSAM3
 bash install.sh                 # creates .venv and clones MedSAM3 at the version used for training
 .venv/bin/hf auth login         # paste a Hugging Face token that has access to facebook/sam3
 ```

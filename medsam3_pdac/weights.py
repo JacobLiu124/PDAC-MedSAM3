@@ -13,7 +13,7 @@ from pathlib import Path
 
 import requests
 
-REPO = "JacobLiu124/MedSAM3-PDAC"
+REPO = "JacobLiu124/PDAC-MedSAM3"
 TAG = "v1.0"
 ASSET = "medsam3_pdac_lora_epoch5.pt"
 SHA256 = "448d28a0f6588083a9db114d128a17bef54ef0f08e7f3d47079f372ff7bd00bc"
