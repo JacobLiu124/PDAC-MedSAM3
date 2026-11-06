@@ -2,7 +2,8 @@
 
 The repository is private, so the download needs a GitHub token with read access:
   - set GITHUB_TOKEN, or
-  - be logged in with the GitHub CLI (`gh auth login`); its token is used automatically.
+  - be logged in with the GitHub CLI (`gh auth login`), or have cloned this repo over HTTPS
+    (git's saved GitHub sign-in is reused); the token is never printed.
 Or skip the download and pass a local file: predict.py --weights path/to/medsam3_pdac_lora_epoch5.pt
 """
 import hashlib
@@ -14,7 +15,7 @@ from pathlib import Path
 import requests
 
 REPO = "JacobLiu124/PDAC-MedSAM3"
-TAG = "v1.0"
+TAG = "v0.1"
 ASSET = "medsam3_pdac_lora_epoch5.pt"
 SHA256 = "448d28a0f6588083a9db114d128a17bef54ef0f08e7f3d47079f372ff7bd00bc"
 CACHE = Path(os.environ.get("MEDSAM3_PDAC_CACHE", Path.home() / ".cache" / "medsam3_pdac"))
@@ -28,6 +29,12 @@ def _token():
         r = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True)
         if r.returncode == 0 and r.stdout.strip():
             return r.stdout.strip()
+    if shutil.which("git"):   # the GitHub sign-in git saved when you cloned over HTTPS (never printed)
+        r = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
+                           capture_output=True, text=True, env={**os.environ, "GIT_TERMINAL_PROMPT": "0"})
+        for line in r.stdout.splitlines():
+            if line.startswith("password="):
+                return line.split("=", 1)[1]
     return None
 
 

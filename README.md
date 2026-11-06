@@ -46,7 +46,7 @@ export GITHUB_TOKEN=...         # a GitHub token with read access to this repo (
 .venv/bin/python predict.py --input folder_of_scans/ --out predictions/
 ```
 
-The first run downloads the weights (74 MB) from this repository's release `v1.0` into
+The first run downloads the weights (74 MB) from this repository's release `v0.1` into
 `~/.cache/medsam3_pdac/` and checks their checksum. Already have the file? Pass it directly:
 `--weights medsam3_pdac_lora_epoch5.pt`.
 
