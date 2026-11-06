@@ -8,11 +8,13 @@ prompted with the text `pancreatic tumor`.
 This repository contains only the fine-tuned LoRA layers (74 MB) and the code to run them. SAM3's
 base weights come from Meta via Hugging Face, and MedSAM3's code is downloaded from its own repository.
 
-## Results
+## Training
 
-Trained on 77 MSD Task07 patients with confirmed PDAC (Memorial Sloan Kettering). Tested on 20 held-out
-MSD patients and, zero-shot, on 83 CPTAC-PDA patients from other hospitals in the US and Poland.
-Mean per-patient 3D Dice, with 95% bootstrap intervals; cut-off 0.5, no post-processing.
+Trained on 77 MSD Task07 patients with confirmed PDAC (Memorial Sloan Kettering). 
+
+## Test Results
+Tested on 20 held-out **[MSD](http://medicaldecathlon.com)** patients and zero-shot on 83 **[CPTAC-PDA](https://www.cancerimagingarchive.net/collection/cptac-pda/)** patients from other hospitals in the US and Poland.
+Evaluated on mean per-patient 3D Dice, 95% bootstrap intervals and a confidence cut-off of 0.5, no post-processing.
 
 | Model | Same hospital (MSD, n = 20) | New hospitals (CPTAC, n = 83) | Tumours found (CPTAC) | False spots per scan (CPTAC) |
 |---|---|---|---|---|
@@ -20,7 +22,7 @@ Mean per-patient 3D Dice, with 95% bootstrap intervals; cut-off 0.5, no post-pro
 | nnU-Net 3d_fullres, same training data | 0.548 [0.438-0.650] | 0.391 [0.333-0.447] | 72/83 | 0.25 |
 
 The model finds almost every tumour but also marks several false spots per scan, mostly in bowel and
-stomach. **Review every prediction.** Dice also rises with tumour size: small tumours (< 5 mL) are
+stomach. **Review every prediction.** Dice also rises with tumour size; small tumours (< 5 mL) are
 segmented much less accurately.
 
 ## Quick start
