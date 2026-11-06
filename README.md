@@ -30,20 +30,22 @@ segmented much less accurately.
 You need an **NVIDIA GPU with at least 16 GB of memory**, and access to
 [facebook/sam3](https://huggingface.co/facebook/sam3): open that page while logged in to Hugging Face,
 request access, and wait for approval. Then create a **Read** token under
-Hugging Face → Settings → Access Tokens.
+Hugging Face → Settings → Access Tokens. Keep this token stored somewhere safely for future use.
 
 Open a terminal (on Windows, see below) and paste these three commands:
 
 **1. Install** (about 10 minutes; downloads PyTorch, MedSAM3's code and the dependencies)
 
 ```bash
-git clone https://github.com/JacobLiu124/PDAC-MedSAM3.git && cd PDAC-MedSAM3 && bash install.sh
+git clone https://github.com/JacobLiu124/PDAC-MedSAM3.git #cloning repository
+cd PDAC-MedSAM3
+bash install.sh
 ```
 
-**2. Log in to Hugging Face** (once; paste your Read token when asked, and answer `n` to the git question)
+**2. Log in to Hugging Face** (paste your Read token when asked, and answer `n` to the git question)
 
 ```bash
-.venv/bin/hf auth login
+.venv/bin/hf auth login 
 ```
 
 **3. Run** on one scan, or on a folder of scans
@@ -86,17 +88,16 @@ the input, plus `slice_scores.json` with the highest confidence on every slice.
 | Option | Default | Meaning |
 |---|---|---|
 | `--cutoff` | 0.5 | Confidence cut-off. Lower finds more but adds false spots; 0.5 was best on both test sets. |
-| `--weights` | `auto` | `auto` (download), a local `.pt`, `medsam3` (MedSAM3-v1 as released) or `none` (plain SAM3) |
+| `--weights` | `auto` | `auto` fine-tuned weights, `medsam3` (MedSAM3-v1 as released) or `none` (plain SAM3) |
 | `--batch` | 8 | Slices per GPU batch. Lower it if you run out of GPU memory. |
-| `--prompt` | `pancreatic tumor` | Text prompt. The model was trained on this phrase. |
+| `--prompt` | `pancreatic tumor` | Text prompt. The model was trained on this phrase. **Changing NOT reccomended** |
 
 ## How the model was trained
 
 - **Start:** MedSAM3-v1 LoRA weights on the frozen SAM3 base model; only the LoRA layers (rank 16,
   alpha 32, on all attention and MLP layers) were trained.
 - **Data:** every slice showing the pancreas plus 10% of other slices from 77 patients (2,762 slices),
-  abdominal window (level 40, width 400 HU), standard radiology orientation, grayscale in three channels.
-  Two concepts: `pancreas` and `pancreatic tumor`.
+  abdominal window normalising (level 40, width 400 HU), standard radiology orientation, changed to grayscale in three channels (RGB).
 - **Negative queries:** each slice was also asked for the concept it does not contain, with an empty
   answer, so the model learns to say "no tumour here".
 - **Optimisation:** AdamW, learning rate 5e-5 (constant), weight decay 0.01, batch size 4, 5 epochs.
