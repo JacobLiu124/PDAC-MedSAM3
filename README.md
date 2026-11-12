@@ -10,7 +10,7 @@ base weights come from Meta via Hugging Face, and MedSAM3's code is downloaded f
 
 ## Training
 
-Trained on 77 MSD Task07 patients with confirmed PDAC (Memorial Sloan Kettering). 
+Trained on 77 MSD Task07 patients with confirmed PDAC (Memorial Sloan Kettering Cancer Center). 
 
 ## Test Results
 Tested on 20 held-out **[MSD](http://medicaldecathlon.com)** patients and zero-shot on 83 **[CPTAC-PDA](https://www.cancerimagingarchive.net/collection/cptac-pda/)** patients from other hospitals in the US and Poland.
